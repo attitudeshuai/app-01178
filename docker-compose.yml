@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: lcs-algorithm
+    # 一键启动红线：docker-compose up --build -d 必须能直接跑通
+    # 程序使用内置测试用例，无需手动输入
