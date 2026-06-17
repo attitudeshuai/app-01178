@@ -13,7 +13,7 @@ RUN sed -i 's@http://archive.ubuntu.com@http://mirrors.aliyun.com@g' /etc/apt/so
 
 
 # 复制源代码到容器
-COPY main.cpp .
+COPY main.cpp lcs.h ./
 
 # 编译 C++ 源代码
 RUN g++ -o app main.cpp -std=c++11 -O2
