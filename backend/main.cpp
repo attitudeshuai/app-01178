@@ -239,12 +239,144 @@ void runLCS(const string& text1, const string& text2) {
     }
 }
 
+/**
+ * 验证字符串是否为两个字符串的公共子序列
+ */
+bool isSubsequence(const string& sub, const string& text1, const string& text2) {
+    int i = 0, j = 0;
+    for (char c : sub) {
+        while (i < (int)text1.length() && text1[i] != c) i++;
+        if (i >= (int)text1.length()) return false;
+        i++;
+    }
+    i = 0;
+    for (char c : sub) {
+        while (i < (int)text2.length() && text2[i] != c) i++;
+        if (i >= (int)text2.length()) return false;
+        i++;
+    }
+    return true;
+}
+
+/**
+ * 运行单个测试用例
+ * @return 测试通过返回 true，失败返回 false
+ */
+bool runTestCase(const string& testName, const string& text1, const string& text2, int expectedLen) {
+    cout << "  [" << testName << "] ";
+    
+    string lcsString;
+    int len1 = LCS_FullDP::solve(text1, text2, lcsString);
+    int len2 = LCS_TwoRows::solve(text1, text2);
+    int len3 = LCS_OneRow::solve(text1, text2);
+    
+    bool lenConsistent = (len1 == len2) && (len2 == len3);
+    bool lenMatchExpected = (len1 == expectedLen);
+    bool lcsValid = isSubsequence(lcsString, text1, text2) && (int)lcsString.length() == len1;
+    
+    if (lenConsistent && lenMatchExpected && lcsValid) {
+        cout << "PASS" << endl;
+        return true;
+    } else {
+        cout << "FAIL" << endl;
+        cout << "    text1 = \"" << text1 << "\", text2 = \"" << text2 << "\"" << endl;
+        cout << "    期望长度: " << expectedLen << endl;
+        cout << "    FullDP长度: " << len1 << ", TwoRows长度: " << len2 << ", OneRow长度: " << len3 << endl;
+        if (!lenConsistent) cout << "    错误: 三种实现结果不一致" << endl;
+        if (!lenMatchExpected) cout << "    错误: 结果与期望值不符" << endl;
+        if (!lcsValid) {
+            cout << "    错误: LCS字符串无效" << endl;
+            cout << "    LCS字符串: \"" << lcsString << "\"" << endl;
+        }
+        return false;
+    }
+}
+
+/**
+ * 运行所有测试用例
+ */
+void runAllTests() {
+    int passed = 0;
+    int total = 0;
+    
+    printSeparator("测试套件 - LCS 三种实现一致性验证");
+    
+    cout << "\n--- 边界情况：空字符串 ---" << endl;
+    total += 3;
+    if (runTestCase("两个都为空", "", "", 0)) passed++;
+    if (runTestCase("第一个为空", "", "abcde", 0)) passed++;
+    if (runTestCase("第二个为空", "abcde", "", 0)) passed++;
+    
+    cout << "\n--- 边界情况：完全无交集 ---" << endl;
+    total += 3;
+    if (runTestCase("完全不同的字符", "abc", "xyz", 0)) passed++;
+    if (runTestCase("单字符无交集", "a", "b", 0)) passed++;
+    if (runTestCase("长串无交集", "abcdefghij", "klmnopqrst", 0)) passed++;
+    
+    cout << "\n--- 边界情况：完全相同 ---" << endl;
+    total += 4;
+    if (runTestCase("单字符相同", "a", "a", 1)) passed++;
+    if (runTestCase("短串相同", "abc", "abc", 3)) passed++;
+    if (runTestCase("长串相同", "abcdefghij", "abcdefghij", 10)) passed++;
+    if (runTestCase("重复字符相同", "aaaaa", "aaaaa", 5)) passed++;
+    
+    cout << "\n--- 边界情况：单字符 ---" << endl;
+    total += 2;
+    if (runTestCase("单字符匹配", "a", "a", 1)) passed++;
+    if (runTestCase("单字符不匹配", "a", "b", 0)) passed++;
+    
+    cout << "\n--- 子序列关系 ---" << endl;
+    total += 3;
+    if (runTestCase("一个是另一个的子序列", "ace", "abcde", 3)) passed++;
+    if (runTestCase("长串包含短串", "abcde", "ace", 3)) passed++;
+    if (runTestCase("首字符公共", "abcdef", "axy", 1)) passed++;
+    
+    cout << "\n--- 经典测试用例 ---" << endl;
+    total += 4;
+    if (runTestCase("经典用例1", "abcde", "ace", 3)) passed++;
+    if (runTestCase("经典用例2", "abc", "abc", 3)) passed++;
+    if (runTestCase("经典用例3", "abc", "def", 0)) passed++;
+    if (runTestCase("经典用例4", "bl", "yby", 1)) passed++;
+    
+    cout << "\n--- 不对称长度 ---" << endl;
+    total += 3;
+    if (runTestCase("第一个远长于第二个", "abcdefghijklmnop", "ace", 3)) passed++;
+    if (runTestCase("第二个远长于第一个", "ace", "abcdefghijklmnop", 3)) passed++;
+    if (runTestCase("一长一短部分匹配", "abcdefghij", "fghijklmnop", 5)) passed++;
+    
+    cout << "\n--- 重复字符 ---" << endl;
+    total += 3;
+    if (runTestCase("全部重复字符", "aaaaa", "aaabaaa", 5)) passed++;
+    if (runTestCase("交替重复", "ababab", "bababa", 5)) passed++;
+    if (runTestCase("部分重复", "aabbaabb", "bbaabbaa", 6)) passed++;
+    
+    cout << "\n--- 首尾公共 ---" << endl;
+    total += 3;
+    if (runTestCase("仅首字符公共", "axy", "abc", 1)) passed++;
+    if (runTestCase("仅尾字符公共", "xyza", "bca", 1)) passed++;
+    if (runTestCase("首尾都公共", "axyzb", "amb", 2)) passed++;
+    
+    printSeparator("测试结果汇总");
+    cout << "通过: " << passed << " / " << total << endl;
+    if (passed == total) {
+        cout << "[全部通过] 所有测试用例均通过！" << endl;
+    } else {
+        cout << "[测试失败] 有 " << (total - passed) << " 个测试用例未通过" << endl;
+    }
+}
+
 int main(int argc, char* argv[]) {
     cout << "================================================" << endl;
     cout << "   最长公共子序列 (LCS) 算法演示" << endl;
     cout << "================================================" << endl;
     
     string text1, text2;
+    
+    if (argc >= 2 && string(argv[1]) == "--test") {
+        runAllTests();
+        cout << "\n程序执行完毕。" << endl;
+        return 0;
+    }
     
     // 支持三种输入方式：命令行参数、控制台输入、内置测试用例
     if (argc >= 3) {
