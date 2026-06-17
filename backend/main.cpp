@@ -163,6 +163,156 @@ public:
     }
 };
 
+// 前向声明
+void printSeparator(const string& title);
+
+/**
+ * 检查 sub 是否是 str 的子序列
+ * @param str 主串
+ * @param sub 待检查的子序列
+ * @return 如果 sub 是 str 的子序列返回 true，否则返回 false
+ */
+bool isSubsequence(const string& str, const string& sub) {
+    if (sub.empty()) {
+        return true;
+    }
+    int i = 0;
+    for (char c : str) {
+        if (c == sub[i]) {
+            i++;
+            if (i == (int)sub.length()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * 单个测试用例的结果
+ */
+struct TestCaseResult {
+    string name;
+    int len1;
+    int len2;
+    int len3;
+    string lcsString;
+    bool lengthsConsistent;
+    bool lcsValid;
+    bool passed;
+};
+
+/**
+ * 运行单个测试用例
+ * @param name 测试用例名称
+ * @param text1 第一个字符串
+ * @param text2 第二个字符串
+ * @param expectedLen 期望的LCS长度（-1表示不检查期望值，仅检查三种实现一致性）
+ * @return 测试用例结果
+ */
+TestCaseResult runTestCase(const string& name, const string& text1, const string& text2, int expectedLen = -1) {
+    TestCaseResult result;
+    result.name = name;
+    
+    string lcsString;
+    result.len1 = LCS_FullDP::solve(text1, text2, lcsString);
+    result.len2 = LCS_TwoRows::solve(text1, text2);
+    result.len3 = LCS_OneRow::solve(text1, text2);
+    result.lcsString = lcsString;
+    
+    result.lengthsConsistent = (result.len1 == result.len2 && result.len2 == result.len3);
+    result.lcsValid = isSubsequence(text1, lcsString) && isSubsequence(text2, lcsString) && (int)lcsString.length() == result.len1;
+    
+    bool expectedMatch = (expectedLen < 0) || (result.len1 == expectedLen);
+    result.passed = result.lengthsConsistent && result.lcsValid && expectedMatch;
+    
+    return result;
+}
+
+/**
+ * 打印单个测试用例结果
+ */
+void printTestCaseResult(const TestCaseResult& result, int index) {
+    cout << "  [" << (result.passed ? "PASS" : "FAIL") << "] 测试" << index << ": " << result.name << endl;
+    if (!result.passed) {
+        cout << "       方法一长度: " << result.len1 << ", 方法二长度: " << result.len2 << ", 方法三长度: " << result.len3 << endl;
+        cout << "       LCS字符串: \"" << result.lcsString << "\"" << endl;
+        cout << "       长度一致性: " << (result.lengthsConsistent ? "是" : "否") << endl;
+        cout << "       LCS有效性: " << (result.lcsValid ? "是" : "否") << endl;
+    }
+}
+
+/**
+ * 运行所有测试用例
+ * @return 全部通过返回 true，否则返回 false
+ */
+bool runAllTests() {
+    cout << "\n================================================" << endl;
+    cout << "   LCS 算法测试套件" << endl;
+    cout << "================================================" << endl;
+    
+    vector<TestCaseResult> results;
+    
+    // ========== 边界情况：空字符串 ==========
+    results.push_back(runTestCase("两个空字符串", "", "", 0));
+    results.push_back(runTestCase("text1为空，text2非空", "", "abcde", 0));
+    results.push_back(runTestCase("text1非空，text2为空", "abcde", "", 0));
+    
+    // ========== 边界情况：完全无交集 ==========
+    results.push_back(runTestCase("完全无交集-不同字符集", "abc", "xyz", 0));
+    results.push_back(runTestCase("完全无交集-单字符", "a", "b", 0));
+    results.push_back(runTestCase("完全无交集-长字符串", "abcdefg", "xyz123", 0));
+    
+    // ========== 边界情况：完全相同 ==========
+    results.push_back(runTestCase("完全相同-空串", "", "", 0));
+    results.push_back(runTestCase("完全相同-单字符", "a", "a", 1));
+    results.push_back(runTestCase("完全相同-短字符串", "abc", "abc", 3));
+    results.push_back(runTestCase("完全相同-长字符串", "abcdefghij", "abcdefghij", 10));
+    
+    // ========== 常规情况：部分重叠 ==========
+    results.push_back(runTestCase("部分重叠-首尾交叉", "abcde", "ace", 3));
+    results.push_back(runTestCase("部分重叠-中间交叉", "abcdef", "xbydzf", 3));
+    results.push_back(runTestCase("一个是另一个的子序列", "abc", "aabbcc", 3));
+    results.push_back(runTestCase("公共子序列在两端", "abcxyz", "xyzabc", 3));
+    
+    // ========== 特殊情况 ==========
+    results.push_back(runTestCase("单字符-相同", "z", "z", 1));
+    results.push_back(runTestCase("单字符-不同", "a", "z", 0));
+    results.push_back(runTestCase("重复字符", "aaaaa", "aaaaa", 5));
+    results.push_back(runTestCase("重复字符部分匹配", "ababab", "bababa", 5));
+    results.push_back(runTestCase("长度悬殊", "a", "abcdefghij", 1));
+    results.push_back(runTestCase("长度悬殊反向", "abcdefghij", "a", 1));
+    
+    // ========== 打印结果 ==========
+    printSeparator("测试结果汇总");
+    
+    int passed = 0;
+    int failed = 0;
+    
+    for (size_t i = 0; i < results.size(); i++) {
+        printTestCaseResult(results[i], (int)i + 1);
+        if (results[i].passed) {
+            passed++;
+        } else {
+            failed++;
+        }
+    }
+    
+    cout << "\n----------------------------------------" << endl;
+    cout << " 总计: " << results.size() << " 个测试用例" << endl;
+    cout << " 通过: " << passed << " 个" << endl;
+    cout << " 失败: " << failed << " 个" << endl;
+    cout << "----------------------------------------" << endl;
+    
+    if (failed == 0) {
+        cout << "\n[OK] 所有测试用例全部通过！" << endl;
+    } else {
+        cout << "\n[FAIL] 有 " << failed << " 个测试用例失败！" << endl;
+    }
+    
+    return failed == 0;
+}
+
 /**
  * 打印分隔线
  */
@@ -240,6 +390,12 @@ void runLCS(const string& text1, const string& text2) {
 }
 
 int main(int argc, char* argv[]) {
+    // 测试模式：通过 --test 或 -t 参数触发
+    if (argc >= 2 && (string(argv[1]) == "--test" || string(argv[1]) == "-t")) {
+        bool allPassed = runAllTests();
+        return allPassed ? 0 : 1;
+    }
+    
     cout << "================================================" << endl;
     cout << "   最长公共子序列 (LCS) 算法演示" << endl;
     cout << "================================================" << endl;
