@@ -239,7 +239,131 @@ void runLCS(const string& text1, const string& text2) {
     }
 }
 
+struct TestCase {
+    string text1;
+    string text2;
+    int expectedLen;
+    string description;
+};
+
+bool runSingleTest(const TestCase& tc, int& passed, int& total) {
+    total++;
+
+    string lcsStr;
+    int len1 = LCS_FullDP::solve(tc.text1, tc.text2, lcsStr);
+    int len2 = LCS_TwoRows::solve(tc.text1, tc.text2);
+    int len3 = LCS_OneRow::solve(tc.text1, tc.text2);
+
+    bool consistent = (len1 == len2 && len2 == len3);
+    bool matchesExpected = (len1 == tc.expectedLen);
+    bool success = consistent && matchesExpected;
+
+    cout << "  [" << (success ? "PASS" : "FAIL") << "] " << tc.description << endl;
+    cout << "       text1=\"" << tc.text1 << "\", text2=\"" << tc.text2 << "\"" << endl;
+    cout << "       期望长度=" << tc.expectedLen
+         << ", FullDP=" << len1
+         << ", TwoRows=" << len2
+         << ", OneRow=" << len3 << endl;
+
+    if (!consistent) {
+        cout << "       错误：三种实现结果不一致！" << endl;
+    }
+    if (!matchesExpected) {
+        cout << "       错误：结果与期望值不符！" << endl;
+    }
+    if (success && len1 > 0) {
+        cout << "       LCS=\"" << lcsStr << "\"" << endl;
+    }
+
+    if (success) {
+        passed++;
+    }
+    return success;
+}
+
+void runTests() {
+    cout << "================================================" << endl;
+    cout << "   LCS 算法测试套件" << endl;
+    cout << "================================================" << endl;
+
+    vector<TestCase> testCases = {
+        {"", "", 0, "两个空字符串"},
+        {"abc", "", 0, "text1 非空，text2 为空"},
+        {"", "xyz", 0, "text1 为空，text2 非空"},
+
+        {"abc", "def", 0, "完全无交集（无公共字符）"},
+        {"xyz", "abc", 0, "完全无交集（反向）"},
+        {"a", "b", 0, "单字符无交集"},
+
+        {"abcde", "abcde", 5, "完全相同（等长）"},
+        {"a", "a", 1, "完全相同（单字符）"},
+        {"same", "same", 4, "完全相同（普通长度）"},
+
+        {"abcde", "ace", 3, "普通情况 1：子序列"},
+        {"abc", "abc", 3, "普通情况 2：完全相同"},
+        {"abc", "def", 0, "普通情况 3：无交集"},
+        {"abcde", "aec", 2, "普通情况 4：部分公共"},
+        {"bsbininm", "jmjkbkjkv", 1, "普通情况 5：仅一个公共字符"},
+
+        {"abc", "aabbcc", 3, "text2 包含重复字符"},
+        {"aabbcc", "abc", 3, "text1 包含重复字符"},
+        {"aaaaa", "aaaaa", 5, "全部相同字符"},
+        {"ababab", "bababa", 5, "交替重复字符"},
+
+        {"abcdxyz", "xyzabcd", 4, "前后交叉"},
+        {"abcd", "bcda", 3, "循环移位"},
+
+        {"abcdefghij", "klmnopqrst", 0, "长字符串无交集"},
+        {"abcdefghij", "abcdefghij", 10, "长字符串完全相同"},
+        {"abcdefghij", "acegikmoqsuwy", 5, "长字符串部分公共"},
+    };
+
+    int passed = 0;
+    int total = 0;
+
+    printSeparator("边界情况测试");
+    for (size_t i = 0; i < 6; i++) {
+        runSingleTest(testCases[i], passed, total);
+    }
+
+    printSeparator("完全相同测试");
+    for (size_t i = 6; i < 9; i++) {
+        runSingleTest(testCases[i], passed, total);
+    }
+
+    printSeparator("普通情况测试");
+    for (size_t i = 9; i < 15; i++) {
+        runSingleTest(testCases[i], passed, total);
+    }
+
+    printSeparator("重复字符测试");
+    for (size_t i = 15; i < 18; i++) {
+        runSingleTest(testCases[i], passed, total);
+    }
+
+    printSeparator("交叉与长字符串测试");
+    for (size_t i = 18; i < testCases.size(); i++) {
+        runSingleTest(testCases[i], passed, total);
+    }
+
+    printSeparator("测试总结");
+    cout << "  总计：" << total << " 个测试用例" << endl;
+    cout << "  通过：" << passed << " 个" << endl;
+    cout << "  失败：" << (total - passed) << " 个" << endl;
+
+    if (passed == total) {
+        cout << "\n[SUCCESS] 所有测试用例均通过！" << endl;
+    } else {
+        cout << "\n[FAILURE] 有 " << (total - passed) << " 个测试用例失败！" << endl;
+    }
+}
+
 int main(int argc, char* argv[]) {
+    if (argc >= 2 && string(argv[1]) == "--test") {
+        runTests();
+        return 0;
+    }
+
     cout << "================================================" << endl;
     cout << "   最长公共子序列 (LCS) 算法演示" << endl;
     cout << "================================================" << endl;
